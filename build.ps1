@@ -2,8 +2,10 @@
 #   .\build.ps1                 debug build
 #   .\build.ps1 -Release        optimized build + dist\Orbit-Setup.exe + dist\Orbit-portable.zip
 #   .\build.ps1 -Cargo <args>   run any cargo command with the right environment (e.g. -Cargo check -p orbit-ring)
-param([switch]$Release, [Parameter(ValueFromRemainingArguments = $true)][string[]]$Cargo)
-$ErrorActionPreference = 'Stop'
+# No param() block on purpose: PowerShell would swallow cargo flags such as -p.
+$Release = $args -contains '-Release'
+$Cargo = if ($args.Count -and $args[0] -eq '-Cargo') { @($args | Select-Object -Skip 1) } else { $null }
+# Not 'Stop': in Windows PowerShell 5.1 that turns cargo's stderr progress lines into terminating errors.
 Set-Location $PSScriptRoot
 
 # Toolchain: rustup's x86_64-pc-windows-gnu (no Visual Studio needed). dlltool lives in self-contained\.

@@ -12,6 +12,7 @@ use windows::Win32::Graphics::Gdi::*;
 use windows::Win32::System::Com::*;
 use windows::Win32::System::DataExchange::COPYDATASTRUCT;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+use windows::Win32::System::ProcessStatus::K32EmptyWorkingSet;
 use windows::Win32::System::Threading::*;
 use windows::Win32::UI::HiDpi::*;
 use windows::Win32::UI::Input::KeyboardAndMouse::*;
@@ -20,6 +21,7 @@ use windows::Win32::UI::WindowsAndMessaging::*;
 
 const CLASS: PCWSTR = w!("Orbit.Host");
 const WM_TRAY: u32 = WM_APP + 1;
+const WM_WARM: u32 = WM_APP + 2;
 const HOTKEY: i32 = 1;
 const TIMER_COLLECT: usize = 1;
 const COPY_RING: usize = 0x4F52; // "OR"
@@ -182,6 +184,7 @@ fn run(initial: Vec<PathBuf>, welcome: bool) {
             );
         }
         tray(hwnd, NIM_ADD);
+        let _ = PostMessageW(hwnd, WM_WARM, WPARAM(0), LPARAM(0)); // after the loop starts: launch stays instant
         if welcome {
             balloon(hwnd, "Orbit is ready", "Select a file in Explorer and press Alt+Q.");
         }
@@ -201,6 +204,15 @@ fn run(initial: Vec<PathBuf>, welcome: bool) {
 unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) -> LRESULT {
     match msg {
         WM_HOTKEY => show_ring(orbit_shell::selection()),
+        WM_WARM => {
+            // Pay one-time costs (D2D/DirectWrite, fonts, shell image factory) now instead of on the
+            // first Alt+Q, then hand the pages back so idle memory stays minimal.
+            orbit_ring::warm_up();
+            if let Ok(exe) = std::env::current_exe() {
+                let _ = orbit_shell::icon(&exe, 128);
+            }
+            let _ = K32EmptyWorkingSet(GetCurrentProcess());
+        }
         WM_COPYDATA => {
             let cds = &*(lp.0 as *const COPYDATASTRUCT);
             if cds.dwData != COPY_RING {

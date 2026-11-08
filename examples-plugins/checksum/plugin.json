@@ -1,0 +1,17 @@
+{
+  "id": "checksum",
+  "name": "Checksum",
+  "version": "1.0.0",
+  "description": "Copies the SHA-256 hash of the selected files to the clipboard.",
+  "actions": [
+    {
+      "id": "sha256",
+      "label": "Copy SHA-256",
+      "glyph": "E8C8",
+      "match": { "extensions": ["*"], "folders": false, "min": 1, "max": 100 },
+      "command": "sha256.ps1",
+      "args": ["{files}"],
+      "mode": "all"
+    }
+  ]
+}

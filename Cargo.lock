@@ -511,6 +511,7 @@ dependencies = [
  "image",
  "lopdf",
  "orbit-core",
+ "rayon",
  "windows",
  "zip",
 ]
@@ -547,6 +548,7 @@ dependencies = [
 name = "orbit-setup"
 version = "1.0.0"
 dependencies = [
+ "image",
  "orbit-core",
  "windows",
 ]
