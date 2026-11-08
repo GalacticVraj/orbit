@@ -1,0 +1,52 @@
+﻿[package]
+name = "orbit"
+version = "1.0.0"
+edition = "2021"
+description = "The fastest way to act on files."
+
+[[bin]]
+name = "orbit"
+path = "src/main.rs"
+
+[dependencies]
+orbit-core = { path = "crates/core" }
+orbit-shell = { path = "crates/shell" }
+orbit-ring = { path = "crates/ring" }
+orbit-engine = { path = "crates/engine" }
+orbit-rename = { path = "crates/rename" }
+orbit-plugins = { path = "crates/plugins" }
+orbit-setup = { path = "crates/setup" }
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_System_Com",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+    "Win32_Security",
+    "Win32_System_DataExchange",
+    "Win32_System_ProcessStatus",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_HiDpi",
+    "Win32_UI_Shell",
+    "Win32_Graphics_Gdi",
+] }
+
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.dependencies]
+windows = "0.58"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = true
+# panic stays "unwind": a panicking conversion becomes an error on the ring instead of killing Orbit.
+
+# Dependencies are optimised even in dev builds so image/PDF work is usable while iterating.
+[profile.dev.package."*"]
+opt-level = 2
