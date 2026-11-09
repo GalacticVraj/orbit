@@ -70,8 +70,12 @@ fn main() {
                 run(paths, false);
             }
         }
-        Some("--welcome") => run(Vec::new(), true),
-        Some("--portable") => run(Vec::new(), false),
+        // Every host path must take the singleton first, or a later `--ring` would start a second host.
+        Some(a @ ("--welcome" | "--portable")) => {
+            if !forward(&[]) {
+                run(Vec::new(), a == "--welcome");
+            }
+        }
         _ => {
             if forward(&[]) {
                 return; // already running: the host shows a "still here" balloon

@@ -13,6 +13,15 @@ pub const CENTER_R: f32 = 57.0;
 pub const HALF: f32 = R_GLASS + 36.0; // half window size: room for the shadow and the success pulse
 
 const MAX_NODES: usize = 8;
+/// How far (DIP) the glass swells toward the hovered node.
+const BULGE: f32 = 7.0;
+/// Max magnetic pull (DIP) of a hovered node toward the cursor.
+const MAGNET: f32 = 5.0;
+
+/// Wrap an angle difference into -PI..PI.
+pub fn wrap(a: f32) -> f32 {
+    (a + PI).rem_euclid(TAU) - PI
+}
 
 /// Damped spring (unit mass). `k` stiffness, `z` damping ratio (<1 overshoots).
 #[derive(Clone, Copy, Debug)]
@@ -108,6 +117,17 @@ pub struct Ring {
     pub check: Spring,
     pub pulse: Spring,
     pub shake: Spring,
+    /// Jelly: elliptical deformation amplitude (rest 0), along `wob_dir`.
+    pub wobble: Spring,
+    pub wob_dir: f32,
+    /// Liquid swell of the glass toward the hovered node.
+    pub bulge: Spring,
+    pub bulge_dir: Spring,
+    /// Selection indicator sliding along the rim.
+    pub sel: Spring,
+    pub sel_a: Spring,
+    /// Magnetic offset of the hovered node toward the cursor.
+    pub mag: (Spring, Spring),
     /// 0..1: result disc grows to fit a long message.
     pub grow: Spring,
     pub message: String,
@@ -164,6 +184,13 @@ impl Ring {
             check: Spring::new(0.0, 140.0, 1.0),
             pulse: Spring::new(0.0, 22.0, 1.0),
             shake: Spring::new(0.0, 900.0, 0.18),
+            wobble: Spring { v: 1.0, ..Spring::new(0.0, 360.0, 0.3) },
+            wob_dir: 0.0,
+            bulge: Spring::new(0.0, 260.0, 0.45),
+            bulge_dir: Spring::new(0.0, 320.0, 0.8),
+            sel: Spring::new(0.0, 280.0, 0.72),
+            sel_a: Spring::new(0.0, 400.0, 1.0),
+            mag: (Spring::new(0.0, 300.0, 0.6), Spring::new(0.0, 300.0, 0.6)),
             grow: Spring::new(0.0, 200.0, 0.85),
             message: String::new(),
             time: 0.0,
@@ -179,6 +206,40 @@ impl Ring {
             v = &v[i].children;
         }
         v
+    }
+
+    /// Glass radius at angle `a` for base radius `rad`: jelly wobble + liquid swell toward the hover.
+    pub fn rim(&self, rad: f32, a: f32) -> f32 {
+        let w = self.wobble.x * (2.0 * (a - self.wob_dir)).cos();
+        let d = wrap(a - self.bulge_dir.x) / 0.45;
+        rad * (1.0 + w) + BULGE * self.bulge.x * (-d * d).exp()
+    }
+
+    /// Kick the jelly: positive stretches along `dir`.
+    pub fn jiggle(&mut self, dir: f32, v: f32) {
+        self.wob_dir = dir;
+        self.wobble.v += v;
+    }
+
+    fn squish(&mut self, v: f32) {
+        let dir = match self.hover {
+            Some(Hit::Node(i)) => angle(i, self.nodes.len()),
+            _ => 0.0,
+        };
+        self.jiggle(dir, -v);
+    }
+
+    /// Cursor moved (DIPs relative to the centre): the hovered node leans toward it.
+    pub fn pointer(&mut self, x: f32, y: f32) {
+        let (mut tx, mut ty) = (0.0, 0.0);
+        if let Some(Hit::Node(i)) = self.hover.filter(|_| self.phase == Phase::Menu) {
+            let a = angle(i, self.nodes.len());
+            let (dx, dy) = (x - ORBIT * a.cos(), y - ORBIT * a.sin());
+            let k = (dx.hypot(dy) * 0.2).min(MAGNET) / dx.hypot(dy).max(1e-3);
+            (tx, ty) = (dx * k, dy * k);
+        }
+        self.mag.0.to = tx;
+        self.mag.1.to = ty;
     }
 
     pub fn in_group(&self) -> bool {
@@ -213,6 +274,9 @@ impl Ring {
             .collect();
         self.hover = None;
         self.set_hover(None);
+        if !self.ghost.is_empty() {
+            self.jiggle(0.0, 0.45);
+        }
     }
 
     pub fn set_hover(&mut self, h: Option<Hit>) {
@@ -224,6 +288,27 @@ impl Ring {
             n.hover.to = (h == Some(Hit::Node(i))) as u8 as f32;
         }
         self.center_hover.to = (h == Some(Hit::Center) && self.in_group()) as u8 as f32;
+        self.mag.0.to = 0.0;
+        self.mag.1.to = 0.0;
+        // Rim indicator + liquid swell follow the hovered node along the shortest way round.
+        match h {
+            Some(Hit::Node(i)) => {
+                let a = angle(i, self.nodes.len());
+                for (s, shown) in [(&mut self.sel, self.sel_a.x), (&mut self.bulge_dir, self.bulge.x)] {
+                    if shown < 0.05 {
+                        s.x = a;
+                        s.v = 0.0;
+                    }
+                    s.to = s.x + wrap(a - s.x);
+                }
+                self.sel_a.to = 1.0;
+                self.bulge.to = 1.0;
+            }
+            _ => {
+                self.sel_a.to = 0.0;
+                self.bulge.to = 0.0;
+            }
+        }
         let text = match h {
             Some(Hit::Node(i)) => Some(self.nodes[i].label.clone()),
             Some(Hit::Center) if self.in_group() => Some("Back".to_string()),
@@ -245,6 +330,9 @@ impl Ring {
         for (i, n) in self.nodes.iter_mut().enumerate() {
             n.press.to = (h == Some(Hit::Node(i))) as u8 as f32;
         }
+        if h.is_some() {
+            self.squish(0.25);
+        }
         self.center_press.to = (h == Some(Hit::Center)) as u8 as f32;
     }
 
@@ -257,7 +345,8 @@ impl Ring {
         if d <= CENTER_R {
             return Some(Hit::Center);
         }
-        if d > R_GLASS || self.nodes.is_empty() {
+        // A little beyond the glass still counts: overshooting a node shouldn't drop it.
+        if d > R_GLASS + 18.0 || self.nodes.is_empty() {
             return None;
         }
         let n = self.nodes.len();
@@ -317,6 +406,7 @@ impl Ring {
     fn start_task(&mut self, i: usize) {
         let n = &self.nodes[i];
         self.picked = (n.glyph, n.label.clone());
+        self.jiggle(angle(i, self.nodes.len()), 0.7);
         self.set_hover(None);
         self.phase = Phase::Running;
         for n in &mut self.nodes {
@@ -361,6 +451,7 @@ impl Ring {
         self.check.delay = 0.14;
         if ok {
             self.pulse = Spring { x: 0.0, to: 1.0, delay: 0.12, ..self.pulse };
+            self.jiggle(PI / 2.0, 0.6);
         } else {
             self.shake.v = 260.0;
         }
@@ -420,6 +511,13 @@ impl Ring {
             &mut self.pulse,
             &mut self.shake,
             &mut self.grow,
+            &mut self.wobble,
+            &mut self.bulge,
+            &mut self.bulge_dir,
+            &mut self.sel,
+            &mut self.sel_a,
+            &mut self.mag.0,
+            &mut self.mag.1,
         ] {
             moving |= s.step(dt);
         }
@@ -450,7 +548,8 @@ mod tests {
         assert_eq!(r.hit(0.0, -ORBIT), Some(Hit::Node(0))); // top
         assert_eq!(r.hit(ORBIT, 0.0), Some(Hit::Node(2))); // right = 2/8 turn clockwise
         assert_eq!(r.hit(0.0, 0.0), Some(Hit::Center));
-        assert_eq!(r.hit(R_GLASS + 5.0, 0.0), None);
+        assert_eq!(r.hit(R_GLASS + 30.0, 0.0), None);
+        assert!((wrap(TAU - 0.1) + 0.1).abs() < 1e-5);
 
         r.rotate(-1);
         assert_eq!(r.hover, Some(Hit::Node(7)));
@@ -468,5 +567,19 @@ mod tests {
         }
         assert!(n < 600, "springs must settle");
         assert!((r.arc_len.x - PI).abs() < 1e-2);
+    }
+
+    /// The frame loop stops only when every spring rests: an open, hovered menu must go idle.
+    #[test]
+    fn menu_goes_idle() {
+        let acts: Vec<Action> = (0..6).map(|i| Action::new(&format!("a{i}"), "A", 'x')).collect();
+        let mut r = Ring::new(&[PathBuf::from("x.pdf")], None, acts);
+        let settle = |r: &mut Ring| (0..600).take_while(|_| r.tick(1.0 / 60.0)).count();
+        assert!(settle(&mut r) < 600, "open must settle");
+        r.set_hover(Some(Hit::Node(2)));
+        r.pointer(40.0, 30.0);
+        assert!(settle(&mut r) < 600, "hover must settle");
+        r.rotate(3);
+        assert!(settle(&mut r) < 600, "keyboard move must settle");
     }
 }

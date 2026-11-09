@@ -7,7 +7,7 @@
 mod draw;
 mod ring;
 
-use draw::{Gfx, Surface, Theme};
+use draw::{Backdrop, Gfx, Surface, Theme};
 use orbit_core::{Action, Bitmap, Outcome};
 use ring::{Effect, Hit, Phase, Ring, HALF};
 use std::cell::RefCell;
@@ -32,6 +32,8 @@ const WM_PROGRESS: u32 = WM_APP + 0x301;
 const WM_FINISH: u32 = WM_APP + 0x302;
 const WM_DISMISS: u32 = WM_APP + 0x303;
 const TIMER_LINGER: usize = 1;
+/// Minimum frame spacing. Below 1/60 s so a 60 Hz panel never drops a vblank.
+const FRAME: std::time::Duration = std::time::Duration::from_millis(13);
 const WM_MOUSELEAVE: u32 = 0x02A3;
 
 struct Shared {
@@ -143,7 +145,7 @@ struct Ui {
     on_pick: Option<Box<dyn FnMut(&str, Task)>>,
     theme: Theme,
     surface: Option<Surface>,
-    backdrop: Option<Bitmap>,
+    backdrop: Option<Backdrop>,
     anchor: POINT,
     pos: POINT,
     visible: bool,
@@ -288,7 +290,7 @@ impl Ui {
     fn kick(&mut self) {
         if self.visible && !self.animating {
             self.animating = true;
-            self.last = Instant::now();
+            self.last = Instant::now() - FRAME; // first frame renders right away
             unsafe {
                 let _ = PostMessageW(self.hwnd, WM_FRAME, WPARAM(0), LPARAM(0));
             }
@@ -297,6 +299,15 @@ impl Ui {
 
     fn frame(&mut self) {
         let now = Instant::now();
+        // ~60 FPS on any display: on 120-165 Hz panels skip alternate vblanks instead of rendering
+        // two to three times as often for motion the eye can barely tell apart.
+        if self.visible && now - self.last < FRAME {
+            unsafe {
+                let _ = DwmFlush();
+                let _ = PostMessageW(self.hwnd, WM_FRAME, WPARAM(0), LPARAM(0));
+            }
+            return;
+        }
         let dt = (now - self.last).as_secs_f32().min(0.05);
         self.last = now;
         let Some(r) = self.ring.as_mut().filter(|_| self.visible) else {
@@ -371,12 +382,17 @@ impl Ui {
         None
     }
 
-    /// Cursor position (client px) -> ring hit.
-    fn hit(&self, lp: LPARAM) -> Option<Hit> {
-        let (sf, r) = (self.surface.as_ref()?, self.ring.as_ref()?);
+    /// Cursor position (client px) -> DIPs relative to the ring centre.
+    fn local(&self, lp: LPARAM) -> Option<(f32, f32)> {
+        let sf = self.surface.as_ref()?;
         let x = (lp.0 & 0xFFFF) as i16 as f32 - sf.w as f32 / 2.0;
         let y = ((lp.0 >> 16) & 0xFFFF) as i16 as f32 - sf.h as f32 / 2.0;
-        r.hit(x / sf.scale, y / sf.scale)
+        Some((x / sf.scale, y / sf.scale))
+    }
+
+    fn hit(&self, lp: LPARAM) -> Option<Hit> {
+        let (x, y) = self.local(lp)?;
+        self.ring.as_ref()?.hit(x, y)
     }
 
     /// Returns None if the message isn't ours, else an optional deferred on_pick call.
@@ -446,10 +462,12 @@ impl Ui {
                     self.tracking = unsafe { TrackMouseEvent(&mut t) }.is_ok();
                 }
                 let h = self.hit(lp);
-                if let Some(r) = self.ring.as_mut().filter(|r| r.hover != h) {
+                let (Some((x, y)), Some(r)) = (self.local(lp), self.ring.as_mut()) else { return Some(None) };
+                if r.hover != h {
                     r.set_hover(h);
-                    self.kick();
                 }
+                r.pointer(x, y);
+                self.kick();
             }
             WM_MOUSELEAVE => {
                 self.tracking = false;
@@ -487,6 +505,18 @@ impl Ui {
                     _ => Effect::None,
                 };
                 return Some(self.effect(e));
+            }
+            // Right-click = Esc: up a level, else close.
+            WM_RBUTTONUP => {
+                let r = self.ring.as_mut()?;
+                let e = if r.phase == Phase::Running || r.back() { Effect::None } else { Effect::Close };
+                return Some(self.effect(e));
+            }
+            // The wheel turns the selection round the dial.
+            WM_MOUSEWHEEL => {
+                let r = self.ring.as_mut()?;
+                r.rotate(if (wp.0 >> 16) as i16 > 0 { -1 } else { 1 });
+                self.kick();
             }
             WM_KEYDOWN => {
                 let r = self.ring.as_mut()?;
@@ -577,6 +607,7 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) 
 
 /// Scripted input for [`snapshot`].
 #[doc(hidden)]
+#[derive(Clone)]
 pub enum Step {
     Wait(f32),
     Hover(Option<usize>),
@@ -631,7 +662,7 @@ pub fn snapshot(
         let n = (size.min(sw) * 4) as usize;
         out[(y * size * 4) as usize..][..n].copy_from_slice(&screen.bgra[src..src + n]);
     }
-    let backdrop = draw::frost(&out, size as usize, size as usize, 4);
+    let backdrop = Backdrop::new(&out, size as usize, size as usize);
     let (Ok(g), Some(mut sf)) = (Gfx::new(), Surface::new(size, size, s)) else { return Bitmap::default() };
     sf.render(&g, &r, &theme, Some(&backdrop));
     for (o, p) in out.chunks_exact_mut(4).zip(sf.pixels().chunks_exact(4)) {

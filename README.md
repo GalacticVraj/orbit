@@ -1,56 +1,160 @@
-# Orbit
+<div align="center">
 
-**The fastest way to act on files.** Select files in Explorer, press **Alt+Q**, and a glass command ring blooms
-around the cursor. Pick an action and it runs locally, right away. There's no cloud, no account and no telemetry.
+<h1>⭕ Orbit</h1>
 
-## Install & use
+<h3>The fastest way to act on files.</h3>
 
-1. Run `Orbit-Setup.exe` and choose **Yes**. It installs per-user to `%LOCALAPPDATA%\Programs\Orbit` (no admin
-   rights needed), starts with Windows, adds a Start-menu entry and lives in the tray.
-2. Select one or more files in Explorer or on the desktop, then press **Alt+Q**. You can also right-click and use
-   *Show more options → Orbit*.
-3. To pick an action, click it, use the arrow keys or Tab and press Enter, or press **1–9**. **Esc** or Backspace goes back or closes the ring.
-4. To uninstall, use *Settings → Apps → Orbit*. Your plugins and the rename undo history in `%APPDATA%\Orbit` are kept.
+<p>Select files in Explorer. Press <kbd>Alt</kbd> + <kbd>Q</kbd>. A glass ring blooms around your cursor.<br>Pick an action, and it's done, right on your PC. No websites, no uploads, no waiting.</p>
+
+<img src="docs/media/orbit.gif" width="420" alt="The Orbit ring opening around a PDF, hovering round its actions, compressing it and showing Saved 4.2 MB">
+
+<p><a href="https://github.com/GalacticVraj/orbit/releases/latest/download/Orbit-Setup.exe"><img alt="Download Orbit for Windows" src="https://img.shields.io/badge/Download%20for%20Windows-free-14b8c4?style=for-the-badge&logo=windows11&logoColor=white" height="52"></a></p>
+
+<p><sub><b>3.2 MB</b> &nbsp;·&nbsp; Windows 10 &amp; 11 &nbsp;·&nbsp; no admin rights &nbsp;·&nbsp; no account &nbsp;·&nbsp; never uploads a file &nbsp;·&nbsp; <a href="https://github.com/GalacticVraj/orbit/releases/latest/download/Orbit-portable.zip">portable zip</a></sub></p>
+
+<p><a href="https://github.com/GalacticVraj/orbit/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/GalacticVraj/orbit?style=flat-square&label=release&color=14b8c4"></a> <img alt="Windows 10 and 11" src="https://img.shields.io/badge/Windows-10_%7C_11-111?style=flat-square&logo=windows11&logoColor=white"> <img alt="Written in Rust" src="https://img.shields.io/badge/Rust-Direct2D-111?style=flat-square&logo=rust&logoColor=white"> <img alt="Idle CPU 0%" src="https://img.shields.io/badge/idle_CPU-0%25-111?style=flat-square"> <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/github/license/GalacticVraj/orbit?style=flat-square&color=111"></a></p>
+
+<br><br>
+
+<h3>⚡ Everything you used to open a website for</h3>
+
+</div>
+
+| Select | And Orbit can |
+|---|---|
+| 📄 **PDF** | Compress · Split pages · Extract images · Convert to Word · Merge PDFs (2 or more) |
+| 📝 **Word** | Convert to PDF · Extract images |
+| 📊 **PowerPoint** | Convert to PDF · Export slides as PNG / JPG |
+| 🖼️ **Images** | Convert to JPG / PNG / WEBP · Resize to 50% / 1920 / 1280 / 800 px · Compress |
+| 🎬 **Videos** | Compress (H.264) · Convert to MP4 · Extract the audio |
+| 📁 **Folders** | Zip · Calculate size |
+| 🗂️ **Many files** | Every action as a batch · Zip · Calculate size · **Batch rename** |
+| ✨ **Anything** | Smart Rename · Undo rename · your own plugins |
+
+<div align="center">
+
+<p><sub>Results land next to the original and never overwrite anything (<code>name (2).ext</code>). When it's done, Orbit selects the new file for you.</sub></p>
+
+<br><br>
+
+<p><img src="docs/media/dark-hover.png" width="300" alt="The ring in dark mode, hovering Convert to Word">&nbsp;&nbsp;&nbsp;<img src="docs/media/light-hover.png" width="300" alt="The ring in light mode, hovering Rename"></p>
+
+<h3>💧 Liquid glass, not a menu</h3>
+
+<p>The ring is a frosted lens over whatever is behind it, and its rim refracts the world just past the edge.<br>It wobbles when it opens, swells toward the action under your cursor and squishes when you press. Every motion is a spring.</p>
+
+<br><br>
+
+<p><img src="docs/media/progress.png" width="250" alt="A progress ring while a PDF compresses">&nbsp;&nbsp;<img src="docs/media/success.png" width="250" alt="Saved 4.2 MB">&nbsp;&nbsp;<img src="docs/media/error.png" width="250" alt="A friendly error: the PDF is password-protected"></p>
+
+<h3>✅ It tells you what happened</h3>
+
+<p>Progress fills the rim. Success glows green with what you saved. And when something can't be done,<br>it says why in plain words instead of crashing or failing silently.</p>
+
+<br><br>
+
+<p><img src="docs/media/batch.png" width="300" alt="Twelve photos selected: the ring shows a 12 badge and batch actions">&nbsp;&nbsp;&nbsp;<img src="docs/media/sub-ring.png" width="300" alt="A sub-ring with more options and a Back button"></p>
+
+<h3>🗂️ One file or a hundred</h3>
+
+<p>Select twelve photos and they all resize, convert or zip in one go.<br><b>Smart Rename</b> turns <code>IMG_1024.jpg</code> into <code>Vacation_001.jpg</code> with a live preview, and <b>Undo</b> is one click away.</p>
+
+<br><br>
+
+<h3>📥 Get it in 10 seconds</h3>
+
+<p><a href="https://github.com/GalacticVraj/orbit/releases/latest/download/Orbit-Setup.exe"><img alt="Download Orbit for Windows" src="https://img.shields.io/badge/Download%20for%20Windows-free-14b8c4?style=for-the-badge&logo=windows11&logoColor=white" height="52"></a></p>
+
+<p><b>1.</b> Run <code>Orbit-Setup.exe</code> and choose <b>Yes</b> &nbsp;&nbsp;→&nbsp;&nbsp; <b>2.</b> Select a file in Explorer &nbsp;&nbsp;→&nbsp;&nbsp; <b>3.</b> Press <kbd>Alt</kbd> + <kbd>Q</kbd></p>
+
+<p><sub>"Windows protected your PC"? Click <b>More info → Run anyway</b>. SmartScreen is careful with new apps from independent developers; every line Orbit runs is in this repo.<br>It installs per-user (no admin rights), starts with Windows and lives in the tray. Prefer no install? Get the <a href="https://github.com/GalacticVraj/orbit/releases/latest/download/Orbit-portable.zip">portable zip</a>.</sub></p>
+
+</div>
+
+<br>
+
+### Controls
+
+| Do this | And |
+|---|---|
+| Select files, press <kbd>Alt</kbd> + <kbd>Q</kbd> | The ring opens around your cursor |
+| Right-click → *Show more options* → **Orbit** | The same ring, from the context menu |
+| Click, or <kbd>1</kbd>–<kbd>9</kbd> | Run an action |
+| Mouse wheel, arrow keys or <kbd>Tab</kbd>, then <kbd>Enter</kbd> | Turn the dial and pick |
+| Right-click, <kbd>Esc</kbd> or <kbd>Backspace</kbd> | Go back, or close |
+
+### Private and light
+
+- **Nothing leaves your PC.** No cloud, no account, no telemetry. Every conversion runs locally.
+- **0% CPU at rest.** No timers, no polling, no file watching, no indexing. Orbit sleeps until you press <kbd>Alt</kbd> + <kbd>Q</kbd>.
+- **Fast.** It's ready about 0.1 s after launch, and the ring appears 51–91 ms after the hotkey.
+- **Tiny.** One 3.2 MB exe, about 15 MB of memory at rest.
+
+### FAQ
+
+<details>
+<summary><b>Do I need Microsoft Office?</b></summary>
+<br>
+Only for Word and PowerPoint conversions (and PDF → Word). Orbit uses Office if it's installed, with LibreOffice as the fallback. Everything else (PDFs, images, videos, zips, renaming) works on its own.
+</details>
+
+<details>
+<summary><b>Will it overwrite my files?</b></summary>
+<br>
+Never. Results are saved next to the original with a new name, like <code>report (2).pdf</code>. Renames can be undone from the ring.
+</details>
+
+<details>
+<summary><b>How do I uninstall it?</b></summary>
+<br>
+<i>Settings → Apps → Orbit</i>. Your plugins and rename-undo history stay in <code>%APPDATA%\Orbit</code>; delete that folder to remove them too.
+</details>
+
+<details>
+<summary><b>Windows blocks it completely. What now?</b></summary>
+<br>
+With <b>Smart App Control</b> turned on, Windows blocks unsigned apps, and Orbit isn't code-signed yet. Signed releases are first on the roadmap.
+</details>
+
+### Plugins
+
+Add your own actions to the ring, in any language. A plugin is a folder with a `plugin.json` and an executable or script (`.exe`, `.ps1`, `.cmd`, `.py`). It runs in its own process and reports back through `progress:` / `message:` / `reveal:` lines. See [docs/PLUGINS.md](docs/PLUGINS.md) and try the example:
+
+```powershell
+orbit --install-plugin examples-plugins\checksum      # adds "Copy SHA-256" to the ring
+```
 
 Command-line flags: `--portable` (run without installing), `--install`, `--uninstall`, `--install-plugin <folder|zip>`, `--quit`, `--ring <paths…>`.
 
-## Actions
+### Build it yourself
 
-| Selection | Actions |
-|---|---|
-| PDF | Compress (images downsampled and re-encoded, streams compressed, unused objects pruned) · Split Pages · Extract Images · Convert to Word · Merge PDFs (2 or more) |
-| Word | Convert to PDF · Extract Images |
-| PowerPoint | Convert to PDF · Export Slides → PNG / JPG |
-| Images | Convert → JPG / PNG / WEBP · Resize → 50% / 1920 / 1280 / 800 px · Compress |
-| Videos | Extract Audio (AAC) · Compress Video (H.264) · Convert to MP4 |
-| Folders | Zip · Calculate Size |
-| Multiple files | Every per-file action runs as a batch · Zip · Calculate Size · **Batch Rename** |
-| Anything | Smart Rename · Undo Rename (after a rename) · installed plugins |
+You need [rustup](https://rustup.rs) with the GNU host. No Visual Studio is required.
 
-Outputs are written next to the source and never overwrite anything (`name (2).ext`). Once an action finishes,
-Orbit selects the result in the Explorer window you were using.
+```powershell
+rustup-init -y --default-host x86_64-pc-windows-gnu --profile minimal
+.\build.ps1                      # debug build → target\debug\orbit.exe
+.\build.ps1 -Release             # release build → dist\Orbit-Setup.exe + dist\Orbit-portable.zip
+.\build.ps1 -Cargo test --workspace
+.\build.ps1 -Cargo run -p orbit-ring --example demo        # live ring playground
+.\build.ps1 -Cargo run -p orbit-ring --example snapshot    # render every ring state to target\snapshots
+```
 
-**Smart Rename** is rule-based, with a live preview. Pattern `Vacation_###` gives `Vacation_001.jpg`, … and the
-tokens `{name}`, `{date}` and `{ext}` are available. It also offers find → replace, case, sorting by natural name
-or date, and a smart default (`IMG_1024.jpg → Image_001.jpg`). Swaps such as A↔B are safe, a failure rolls back
-the whole batch, and **Undo** is one ring click away.
+**Installer.** `Orbit-Setup.exe` is the release exe itself: run from anywhere, it offers to install, copies
+itself, and registers autostart, the shortcut, the context menu and an Apps & Features entry. Everything is
+per-user. Because the GNU toolchain has no `windres`, the exe carries no embedded icon. Shortcuts, Apps & Features
+and the context menu use the `orbit.ico` written at install time, and the tray icon is drawn in code.
 
-## Phase 1: tech stack decision
+Two toolchain notes:
+- `windows` is pinned to 0.58. It links through prebuilt import libraries, whereas 0.59+ uses raw-dylib, which
+  needs binutils `as`, and that isn't shipped with the GNU toolchain.
+- `.cargo/config.toml` switches `getrandom` to its `windows_legacy` backend for the same reason.
 
-Score from 1 to 5 (higher is better):
+**Smart App Control:** with SAC on, Windows blocks unsigned binaries, including Orbit and every test build. To
+ship to SAC-enabled PCs, sign the release with a publicly trusted certificate (e.g. Azure Trusted Signing).
 
-| Stack | RAM | Startup | Native look | Animation | Win integration | Verdict |
-|---|---|---|---|---|---|---|
-| **Rust + Win32 + Direct2D/DirectWrite** | 5 (≈2 MB private idle) | 5 | 5 (we draw Fluent ourselves) | 5 (springs, vsync via DwmFlush) | 5 (direct COM) | **Chosen** |
-| C++ Win32 | 5 | 5 | 5 | 5 | 5 | Same result, with less memory safety and slower iteration |
-| WinUI 3 | 2 (60–100 MB) | 2 | 5 | 4 | 3 | Too heavy for a resident utility |
-| WPF | 2 (50–80 MB) | 2 | 3 | 4 | 3 | Over the RAM budget; .NET JIT startup |
-| Avalonia | 2 | 2 | 2 | 4 | 2 | Not native; heavy |
-| Qt | 3 | 3 | 2 | 4 | 3 | Large runtime; not native-looking |
-| Tauri | 2 (WebView2 ≈ 80 MB+) | 3 | 2 | 4 | 2 | A browser engine for a 400 px ring |
-| Electron | 1 | 1 | 1 | 4 | 2 | Exactly what Orbit must not be |
-
-## Architecture
+<details>
+<summary><b>How it's made</b></summary>
+<br>
 
 ```
 orbit/
@@ -86,33 +190,11 @@ Orbit down, and an uninstalled plugin costs nothing. Progress, messages and outp
 `progress:` / `message:` / `reveal:` lines on stdout. See [docs/PLUGINS.md](docs/PLUGINS.md). Install one with
 `orbit --install-plugin examples-plugins\checksum`.
 
-## Build
+</details>
 
-You need [rustup](https://rustup.rs) with the GNU host. No Visual Studio is required.
-
-```powershell
-rustup-init -y --default-host x86_64-pc-windows-gnu --profile minimal
-.\build.ps1                      # debug build → target\debug\orbit.exe
-.\build.ps1 -Release             # release build → dist\Orbit-Setup.exe + dist\Orbit-portable.zip
-.\build.ps1 -Cargo test --workspace
-.\build.ps1 -Cargo run -p orbit-ring --example demo        # live ring playground
-.\build.ps1 -Cargo run -p orbit-ring --example snapshot    # render every ring state to target\snapshots
-```
-
-**Installer.** `Orbit-Setup.exe` is the release exe itself: run from anywhere, it offers to install, copies
-itself, and registers autostart, the shortcut, the context menu and an Apps & Features entry. Everything is
-per-user. Because the GNU toolchain has no `windres`, the exe carries no embedded icon. Shortcuts, Apps & Features
-and the context menu use the `orbit.ico` written at install time, and the tray icon is drawn in code.
-
-Two toolchain notes:
-- `windows` is pinned to 0.58. It links through prebuilt import libraries, whereas 0.59+ uses raw-dylib, which
-  needs binutils `as`, and that isn't shipped with the GNU toolchain.
-- `.cargo/config.toml` switches `getrandom` to its `windows_legacy` backend for the same reason.
-
-**Smart App Control:** with SAC on, Windows blocks unsigned binaries, including Orbit and every test build. To
-ship to SAC-enabled PCs, sign the release with a publicly trusted certificate (e.g. Azure Trusted Signing).
-
-## Optimization report
+<details>
+<summary><b>Performance report</b></summary>
+<br>
 
 All figures were measured on this machine with the release build (Windows 11 26340).
 
@@ -129,7 +211,15 @@ What makes it fast:
 - **Native draw path.** The ring is a layered window drawn by Direct2D into a premultiplied DIB. It has no
   framework, no XAML and no web view.
 - **Cheap glass.** The blur is a screen capture downsampled to ¼ size, run through three box-blur passes and
-  given a saturation lift. That costs a few ms per open instead of a GPU effect chain.
+  given a saturation lift. A half-size sharp copy feeds the refracting rim. Both take about 3 ms per open
+  instead of a GPU effect chain.
+- **Glass baked once per show.** Frost, tint, refracting rim, edge glow, sheen and grain are drawn once into
+  a bitmap, so each frame does one fill for the body. Gradient stop collections are cached, and animated alpha
+  goes through brush opacity so the cache keeps hitting. A full menu frame costs 2–4 ms wall and 7–10 ms CPU
+  at 150% scaling, down from 12–27 ms CPU.
+- **About 60 FPS on any panel.** On 120–165 Hz displays the frame loop skips alternate vblanks instead of
+  rendering two to three times as often. Frames run only while something moves, and the ring goes back to
+  0% CPU once its springs settle.
 - **Warm-up after launch.** Right after the message loop starts, Orbit does the one-time setup (window,
   D2D/DirectWrite, fonts, shell image factory) and then trims its working set. That cut the first ring open from
   232 to 135 ms.
@@ -144,9 +234,33 @@ What makes it fast:
 Known limits:
 - The first open after launch is ~35 ms over target. That time is DLL paging and the first cross-process
   Explorer call.
-- About 15 thread-pool threads stay parked after the warm-up. They use no CPU.
+- About 15 thread-pool threads stay parked after the warm-up. They use no CPU. They belong to the software
+  rasterizer, which spreads each frame across cores: during an animation CPU time is about 2–3× the wall time.
 
-## Limitations
+</details>
+
+<details>
+<summary><b>Why Rust + Direct2D</b></summary>
+<br>
+
+Score from 1 to 5 (higher is better):
+
+| Stack | RAM | Startup | Native look | Animation | Win integration | Verdict |
+|---|---|---|---|---|---|---|
+| **Rust + Win32 + Direct2D/DirectWrite** | 5 (≈2 MB private idle) | 5 | 5 (we draw Fluent ourselves) | 5 (springs, vsync via DwmFlush) | 5 (direct COM) | **Chosen** |
+| C++ Win32 | 5 | 5 | 5 | 5 | 5 | Same result, with less memory safety and slower iteration |
+| WinUI 3 | 2 (60–100 MB) | 2 | 5 | 4 | 3 | Too heavy for a resident utility |
+| WPF | 2 (50–80 MB) | 2 | 3 | 4 | 3 | Over the RAM budget; .NET JIT startup |
+| Avalonia | 2 | 2 | 2 | 4 | 2 | Not native; heavy |
+| Qt | 3 | 3 | 2 | 4 | 3 | Large runtime; not native-looking |
+| Tauri | 2 (WebView2 ≈ 80 MB+) | 3 | 2 | 4 | 2 | A browser engine for a 400 px ring |
+| Electron | 1 | 1 | 1 | 4 | 2 | Exactly what Orbit must not be |
+
+</details>
+
+<details>
+<summary><b>Limitations and roadmap</b></summary>
+<br>
 
 - **Office.** Word/PDF/PowerPoint conversions need Microsoft Office, with LibreOffice as the fallback. The
   LibreOffice path has only been compiled, not run, because LibreOffice isn't installed here.
@@ -156,7 +270,7 @@ Known limits:
 - **Context menu.** On Windows 11 the Orbit entry sits under *Show more options*. See the roadmap.
 - **No cancel.** A running action can't be cancelled yet; Esc only hides the ring while the action finishes.
 
-## Roadmap
+**Roadmap**
 
 1. **Signed releases.** Use Azure Trusted Signing so Orbit runs with Smart App Control on and SmartScreen stays quiet.
 2. **Windows 11 top-level menu.** An `IExplorerCommand` handler in a sparse MSIX package would put "Orbit" in
@@ -168,3 +282,19 @@ Known limits:
    image generation, all through the existing plugin protocol.
 7. **Accessibility.** UI Automation for the ring, so screen readers announce nodes and results.
 8. **Per-action icons in the ring centre**, e.g. a live page-count preview for PDFs.
+
+</details>
+
+<br>
+
+<div align="center">
+
+<h3>Stop uploading your files to random websites.</h3>
+
+<p><a href="https://github.com/GalacticVraj/orbit/releases/latest/download/Orbit-Setup.exe"><img alt="Download Orbit for Windows" src="https://img.shields.io/badge/Download%20for%20Windows-free-14b8c4?style=for-the-badge&logo=windows11&logoColor=white" height="52"></a></p>
+
+If Orbit saved you a trip to a converter site, <b>⭐ star the repo</b>. It's how other people find it.
+
+<sub>Made with care by <a href="https://github.com/GalacticVraj">GalacticVraj</a> · <a href="LICENSE">MIT License</a></sub>
+
+</div>

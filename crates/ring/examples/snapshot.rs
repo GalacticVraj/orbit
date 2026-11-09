@@ -1,5 +1,6 @@
 //! Renders key ring states over a wallpaper into target\snapshots\*.png (offscreen; for visual review).
 //!   cargo run -p orbit-ring --example snapshot
+//!   cargo run -p orbit-ring --example snapshot -- reel   (an animation's frames into target\reel\*.png)
 
 use orbit_core::{Action, Bitmap, Outcome};
 use orbit_ring::{snapshot, Step};
@@ -20,6 +21,9 @@ fn main() -> Result<()> {
     let one = [PathBuf::from(r"C:\Users\me\Documents\Quarterly report 2026 - final.pdf")];
     let many: Vec<PathBuf> = (1..=12).map(|i| PathBuf::from(format!(r"C:\pics\IMG_{i:04}.jpg"))).collect();
     let doc = Some(doc_icon());
+    if std::env::args().any(|a| a == "reel") {
+        return reel(&wic, &screen, &one, doc);
+    }
     let shots: Vec<(&str, (i32, i32), u32, bool, &[PathBuf], Option<Bitmap>, Vec<Step>)> = vec![
         ("01-dark-open", (520, 420), 144, true, &one, doc.clone(), vec![Step::Wait(1.0)]),
         ("02-light-open", (1150, 380), 144, false, &one, doc.clone(), vec![Step::Wait(1.0)]),
@@ -36,6 +40,8 @@ fn main() -> Result<()> {
         ("13-multi-badge", (1000, 700), 144, true, &many, photo.clone(), vec![Step::Wait(1.0)]),
         ("14-multi-badge-light-100", (1000, 700), 96, false, &many, photo.clone(), vec![Step::Wait(1.0), Step::Hover(Some(7)), Step::Wait(0.6)]),
         ("15-hint", (700, 450), 144, true, &[], None, vec![Step::Wait(1.0)]),
+        ("16-open-jelly", (520, 420), 144, true, &one, doc.clone(), vec![Step::Wait(0.16)]),
+        ("17-hover-swell", (820, 620), 144, false, &one, doc.clone(), vec![Step::Wait(1.0), Step::Hover(Some(2)), Step::Wait(0.12)]),
     ];
     for (name, at, dpi, dark, paths, icon, steps) in shots {
         let acts = if paths.is_empty() { vec![] } else if paths.len() > 1 { image_actions() } else { pdf_actions() };
@@ -161,4 +167,38 @@ fn doc_icon() -> Bitmap {
         }
     }
     Bitmap { width: n as u32, height: n as u32, bgra }
+}
+
+/// Open, sweep the hover round the ring, pick Compress, show progress, then success: 30 fps frames.
+fn reel(wic: &IWICImagingFactory, screen: &Bitmap, one: &[PathBuf], doc: Option<Bitmap>) -> Result<()> {
+    let out = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(r"..\..\target\reel");
+    std::fs::create_dir_all(&out).ok();
+    // (time, event): the whole script, replayed from the start for every frame
+    let mut script: Vec<(f32, Step)> = vec![];
+    for (k, node) in [1usize, 2, 3, 4, 5, 6, 0].iter().enumerate() {
+        script.push((1.0 + k as f32 * 0.38, Step::Hover(Some(*node))));
+    }
+    script.push((4.0, Step::Click(0)));
+    for k in 0..12 {
+        script.push((4.35 + k as f32 * 0.1, Step::Progress((k + 1) as f32 / 12.0 * 0.96)));
+    }
+    script.push((5.7, Step::Finish(Ok(Outcome::new("Saved 4.2 MB", vec![])))));
+    let frames = (7.4 * 30.0) as usize;
+    for f in 0..frames {
+        let t = f as f32 / 30.0;
+        let (mut steps, mut now) = (vec![], 0.0);
+        for (at, e) in &script {
+            if *at > t {
+                break;
+            }
+            steps.push(Step::Wait(at - now));
+            steps.push(e.clone());
+            now = *at;
+        }
+        steps.push(Step::Wait(t - now));
+        let img = snapshot(screen, (820, 620), 144, true, one, doc.clone(), pdf_actions(), steps);
+        save(wic, &img, &out.join(format!("{f:03}.png")))?;
+    }
+    println!("wrote {frames} frames to {}", out.display());
+    Ok(())
 }
