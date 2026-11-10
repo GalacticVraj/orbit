@@ -24,6 +24,9 @@ fn main() -> Result<()> {
     if std::env::args().any(|a| a == "reel") {
         return reel(&wic, &screen, &one, doc);
     }
+    if std::env::args().any(|a| a == "store") {
+        return store(&wic, &one, &many, doc, photo);
+    }
     let shots: Vec<(&str, (i32, i32), u32, bool, &[PathBuf], Option<Bitmap>, Vec<Step>)> = vec![
         ("01-dark-open", (520, 420), 144, true, &one, doc.clone(), vec![Step::Wait(1.0)]),
         ("02-light-open", (1150, 380), 144, false, &one, doc.clone(), vec![Step::Wait(1.0)]),
@@ -200,5 +203,37 @@ fn reel(wic: &IWICImagingFactory, screen: &Bitmap, one: &[PathBuf], doc: Option<
         save(wic, &img, &out.join(format!("{f:03}.png")))?;
     }
     println!("wrote {frames} frames to {}", out.display());
+    Ok(())
+}
+
+/// Store screenshots: the ring at 200% on a full 1920x1080 desktop, into target\store\*.png.
+fn store(wic: &IWICImagingFactory, one: &[PathBuf], many: &[PathBuf], doc: Option<Bitmap>, photo: Option<Bitmap>) -> Result<()> {
+    let out = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(r"..\..\target\store");
+    std::fs::create_dir_all(&out).ok();
+    let wall = load(wic, r"C:\Windows\Web\4K\Wallpaper\Windows\img0_1920x1200.jpg", 1920, 1200).unwrap_or_else(|_| gradient(1920, 1200));
+    let screen = crop(&wall, 0, 60, 1920, 1080);
+    let at = (1330, 540);
+    let shots: Vec<(&str, bool, &[PathBuf], Option<Bitmap>, Vec<Step>)> = vec![
+        ("hover", true, one, doc.clone(), vec![Step::Wait(1.0), Step::Hover(Some(1)), Step::Wait(0.6)]),
+        ("light", false, one, doc.clone(), vec![Step::Wait(1.0), Step::Hover(Some(0)), Step::Wait(0.6)]),
+        ("batch", true, many, photo.clone(), vec![Step::Wait(1.0), Step::Hover(Some(0)), Step::Wait(0.6)]),
+        ("progress", true, one, doc.clone(), vec![Step::Wait(1.0), Step::Click(0), Step::Wait(0.4), Step::Progress(0.62), Step::Wait(1.0)]),
+        ("success", true, one, doc.clone(), vec![Step::Wait(1.0), Step::Click(0), Step::Progress(0.7), Step::Wait(0.5), Step::Finish(Ok(Outcome::new("Saved 4.2 MB", vec![]))), Step::Wait(1.2)]),
+    ];
+    for (name, dark, paths, icon, steps) in shots {
+        let acts = if paths.len() > 1 { image_actions() } else { pdf_actions() };
+        let ring = snapshot(&screen, at, 192, dark, paths, icon, acts, steps);
+        // put the ring back where it was cut from: the glass already shows this very wallpaper
+        let mut full = screen.clone();
+        let size = ring.width as i32;
+        let (x0, y0) = ((at.0 - size / 2).clamp(0, 1920 - size), (at.1 - size / 2).clamp(0, 1080 - size));
+        for y in 0..size {
+            let src = (y * size * 4) as usize;
+            let dst = (((y0 + y) * 1920 + x0) * 4) as usize;
+            full.bgra[dst..dst + (size * 4) as usize].copy_from_slice(&ring.bgra[src..src + (size * 4) as usize]);
+        }
+        save(wic, &full, &out.join(format!("{name}.png")))?;
+    }
+    println!("wrote {}", out.display());
     Ok(())
 }

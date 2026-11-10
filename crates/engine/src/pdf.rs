@@ -32,7 +32,14 @@ fn save(doc: &mut Document) -> Result<Vec<u8>, String> {
 }
 
 fn write(out: &Path, data: &[u8]) -> Result<(), String> {
-    fs::write(out, data).map_err(|e| format!("Couldn't save {} ({e}).", name(out)))
+    use std::io::Write;
+    let r = std::fs::File::create_new(out).and_then(|mut f| f.write_all(data).and_then(|_| f.sync_all()));
+    r.map_err(|e| {
+        if e.kind() != std::io::ErrorKind::AlreadyExists {
+            let _ = std::fs::remove_file(out); // a partial file is worse than none
+        }
+        format!("Couldn't save {} ({e}).", name(out))
+    })
 }
 
 fn int(d: &Dictionary, key: &[u8]) -> Option<i64> {

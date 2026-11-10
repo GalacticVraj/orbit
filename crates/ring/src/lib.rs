@@ -631,7 +631,9 @@ pub fn snapshot(
     actions: Vec<Action>,
     steps: Vec<Step>,
 ) -> Bitmap {
-    let theme = Theme { dark, glass: true, accent: Theme::accent(dark) };
+    // the default Windows accent, not this PC's: snapshots look the same on every machine
+    let accent = if dark { [0x60 as f32 / 255.0, 0xCD as f32 / 255.0, 1.0] } else { [0.0, 0x5F as f32 / 255.0, 0xB8 as f32 / 255.0] };
+    let theme = Theme { dark, glass: true, accent };
     let mut r = Ring::new(paths, icon, actions);
     for step in steps {
         match step {

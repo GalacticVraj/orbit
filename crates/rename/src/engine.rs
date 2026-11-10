@@ -360,6 +360,15 @@ pub(crate) fn summary(status: &[Status], noun: &str) -> (String, bool) {
 struct Move {
     from: PathBuf,
     to: PathBuf,
+    /// Size and write time of the renamed file, so undo never renames a different file that took its name.
+    #[serde(default)]
+    stamp: Option<(u64, u64)>,
+}
+
+fn stamp(p: &Path) -> Option<(u64, u64)> {
+    let m = std::fs::metadata(p).ok()?;
+    let t = m.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?.as_nanos() as u64;
+    Some((m.len(), t))
 }
 
 fn move_file(from: &Path, to: &Path) -> std::io::Result<()> {
@@ -381,7 +390,8 @@ pub(crate) fn rename_all(pairs: &[(PathBuf, PathBuf)]) -> Result<(), String> {
     let mut run = || -> Result<(), String> {
         let mut temps = Vec::new();
         for (i, (from, _)) in pairs.iter().enumerate() {
-            let tmp = from.with_file_name(format!("{tag}-{i}.tmp"));
+            let orig = from.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let tmp = from.with_file_name(format!("{orig}{tag}-{i}.tmp"));
             move_file(from, &tmp).map_err(|e| format!("Couldn't rename {}: {e}", from.display()))?;
             done.push((from.clone(), tmp.clone()));
             temps.push(tmp);
@@ -394,18 +404,21 @@ pub(crate) fn rename_all(pairs: &[(PathBuf, PathBuf)]) -> Result<(), String> {
         Ok(())
     };
     let r = run();
-    if r.is_err() {
-        for (a, b) in done.iter().rev() {
-            let _ = move_file(b, a);
+    if let Err(e) = r {
+        let stuck: Vec<String> =
+            done.iter().rev().filter(|(a, b)| move_file(b, a).is_err()).map(|(_, b)| b.display().to_string()).collect();
+        if !stuck.is_empty() {
+            return Err(format!("{e}\n{} file(s) couldn't be put back and keep a temporary name: {}", stuck.len(), stuck.join(", ")));
         }
+        return Err(e);
     }
-    r
+    Ok(())
 }
 
 /// Rename and record the batch for undo.
 pub(crate) fn apply(pairs: &[(PathBuf, PathBuf)], journal: &Path) -> Result<(), String> {
     rename_all(pairs)?;
-    let moves: Vec<Move> = pairs.iter().map(|(f, t)| Move { from: f.clone(), to: t.clone() }).collect();
+    let moves: Vec<Move> = pairs.iter().map(|(f, t)| Move { from: f.clone(), to: t.clone(), stamp: stamp(t) }).collect();
     // The renames already succeeded; a journal that can't be written only costs the undo.
     let _ = serde_json::to_vec(&moves).map(|j| std::fs::write(journal, j));
     Ok(())
@@ -416,12 +429,13 @@ fn read_journal(journal: &Path) -> Option<Vec<Move>> {
 }
 
 pub(crate) fn can_undo(journal: &Path) -> bool {
-    read_journal(journal).is_some_and(|m| m.iter().any(|m| m.to.exists()))
+    read_journal(journal).is_some_and(|m| m.iter().any(|m| m.to.exists() && (m.stamp.is_none() || stamp(&m.to) == m.stamp)))
 }
 
 pub(crate) fn undo_at(journal: &Path) -> Result<Outcome, String> {
     let moves = read_journal(journal).ok_or("Nothing to undo")?;
-    let mut live: Vec<&Move> = moves.iter().filter(|m| m.to.exists()).collect();
+    let mut live: Vec<&Move> =
+        moves.iter().filter(|m| m.to.exists() && (m.stamp.is_none() || stamp(&m.to) == m.stamp)).collect();
     // `from` must be free, or be vacated by another row of this undo (swaps). Repeat until stable.
     loop {
         let leaving: HashSet<String> = live.iter().map(|m| key(&m.to)).collect();
@@ -602,5 +616,19 @@ pub(crate) mod tests {
         assert_eq!(o.message, "Restored 1 name · 1 skipped");
         assert!(a.exists());
         assert!(undo_at(&journal).is_err());
+    }
+
+    #[test]
+    fn undo_leaves_a_different_file_alone() {
+        let d = tmp("stale");
+        let a = d.join("a.txt");
+        std::fs::write(&a, "a").unwrap();
+        let journal = d.join("journal.json");
+        apply(&[(a.clone(), d.join("1.txt"))], &journal).unwrap();
+        std::fs::remove_file(d.join("1.txt")).unwrap();
+        std::fs::write(d.join("1.txt"), "someone else's file").unwrap(); // a new file takes the name
+        assert!(!can_undo(&journal));
+        assert!(undo_at(&journal).is_err());
+        assert!(d.join("1.txt").exists() && !a.exists());
     }
 }

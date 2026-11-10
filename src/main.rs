@@ -42,6 +42,10 @@ fn main() {
         let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
     }
     match args.first().map(String::as_str) {
+        // A Store (MSIX) install is managed by Windows: no self-install, no registry, no uninstaller.
+        Some("--install" | "--uninstall") if orbit_setup::packaged() => {
+            message("Orbit came from the Microsoft Store. To remove it or turn off start-up, use Settings > Apps.", MB_ICONINFORMATION);
+        }
         Some("--install") => exit_with(install().map(|exe| spawn(&exe, "--welcome"))),
         Some("--uninstall") => {
             close_running();
@@ -80,7 +84,7 @@ fn main() {
             if forward(&[]) {
                 return; // already running: the host shows a "still here" balloon
             }
-            if !orbit_setup::is_installed_copy() {
+            if !orbit_setup::packaged() && !orbit_setup::is_installed_copy() {
                 let ask = "Install Orbit for your account?\n\nIt starts with Windows and lives in the tray. \
                            Select files in Explorer and press Alt+Q.\n\nNo = just run it this time.";
                 if message(ask, MB_YESNO | MB_ICONQUESTION) == IDYES {
@@ -143,7 +147,8 @@ fn forward(paths: &[PathBuf]) -> bool {
             std::mem::forget(mutex); // held for the life of the host
             return false;
         }
-        for _ in 0..40 {
+        for _ in 0..200 {
+            // up to 10 s: a cold start under an antivirus scan can be slow, and dropping a selection is worse
             if let Some(h) = host_window() {
                 let mut data: Vec<u16> = Vec::new();
                 for p in paths {
@@ -239,7 +244,8 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) 
         WM_TIMER if wp.0 == TIMER_COLLECT => {
             let _ = KillTimer(hwnd, TIMER_COLLECT);
             let mut paths = PENDING.with_borrow_mut(std::mem::take);
-            paths.dedup();
+            let mut seen = std::collections::HashSet::new();
+            paths.retain(|p| seen.insert(p.to_string_lossy().to_lowercase())); // forwards interleave: drop every repeat, keep order
             show_ring(paths);
         }
         WM_TRAY => {
@@ -367,7 +373,10 @@ fn tray_menu(hwnd: HWND) {
         let _ = AppendMenuW(menu, MF_STRING | MF_GRAYED, 0, w!("Orbit — select files, press Alt+Q"));
         let _ = AppendMenuW(menu, MF_SEPARATOR, 0, None);
         let _ = AppendMenuW(menu, MF_STRING, ID_PLUGINS, w!("Open plugins folder"));
-        let _ = AppendMenuW(menu, MF_STRING | auto, ID_AUTOSTART, w!("Start with Windows"));
+        if !orbit_setup::packaged() {
+            // Store installs start with Windows through the package; switch it in Settings > Apps > Startup
+            let _ = AppendMenuW(menu, MF_STRING | auto, ID_AUTOSTART, w!("Start with Windows"));
+        }
         let _ = AppendMenuW(menu, MF_SEPARATOR, 0, None);
         let _ = AppendMenuW(menu, MF_STRING, ID_QUIT, w!("Quit Orbit"));
         let mut pt = POINT::default();

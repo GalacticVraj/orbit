@@ -73,7 +73,14 @@ fn flatten(img: DynamicImage) -> RgbImage {
 }
 
 fn write(out: &Path, data: &[u8]) -> Result<(), String> {
-    std::fs::write(out, data).map_err(|e| format!("Couldn't save {} ({e}).", name(out)))
+    use std::io::Write;
+    let r = std::fs::File::create_new(out).and_then(|mut f| f.write_all(data).and_then(|_| f.sync_all()));
+    r.map_err(|e| {
+        if e.kind() != std::io::ErrorKind::AlreadyExists {
+            let _ = std::fs::remove_file(out); // a partial file is worse than none
+        }
+        format!("Couldn't save {} ({e}).", name(out))
+    })
 }
 
 pub fn convert(p: &Path, to: &str) -> Result<Outcome, String> {

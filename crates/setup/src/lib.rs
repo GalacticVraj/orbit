@@ -18,6 +18,16 @@ const UNINSTALL_KEY: PCWSTR = w!(r"Software\Microsoft\Windows\CurrentVersion\Uni
 const ICO_SIZES: [u32; 8] = [16, 20, 24, 32, 40, 48, 64, 256];
 
 /// %LOCALAPPDATA%\Programs\Orbit\orbit.exe
+/// True when Orbit runs from an MSIX package (a Microsoft Store install).
+pub fn packaged() -> bool {
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetCurrentPackageFullName(len: *mut u32, name: *mut u16) -> i32;
+    }
+    let mut n = 0u32;
+    unsafe { GetCurrentPackageFullName(&mut n, std::ptr::null_mut()) != 15700 } // APPMODEL_ERROR_NO_PACKAGE
+}
+
 pub fn installed_exe() -> PathBuf {
     PathBuf::from(env::var_os("LOCALAPPDATA").unwrap_or_default()).join(r"Programs\Orbit\orbit.exe")
 }
